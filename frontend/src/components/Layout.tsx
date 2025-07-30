@@ -1,6 +1,7 @@
 import { Link, useLocation } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
-import { MessageSquare, Settings, LogOut } from 'lucide-react'
+import { useTheme } from '../hooks/useTheme'
+import { MessageSquare, Settings, LogOut, Sun, Moon } from 'lucide-react'
 
 interface LayoutProps {
   children: React.ReactNode
@@ -8,16 +9,17 @@ interface LayoutProps {
 
 export default function Layout({ children }: LayoutProps) {
   const { user, logout } = useAuth()
+  const { theme, toggleTheme } = useTheme()
   const location = useLocation()
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       {/* Header */}
-      <header className="bg-white shadow-sm border-b border-gray-200">
+      <header className="bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center">
-              <h1 className="text-xl font-semibold text-gray-900">
+              <h1 className="text-xl font-semibold text-gray-900 dark:text-white">
                 Chat App MCP Server
               </h1>
             </div>
@@ -27,8 +29,8 @@ export default function Layout({ children }: LayoutProps) {
                 to="/chat"
                 className={`flex items-center px-3 py-2 rounded-md text-sm font-medium ${
                   location.pathname === '/chat'
-                    ? 'bg-primary-100 text-primary-700'
-                    : 'text-gray-500 hover:text-gray-700'
+                    ? 'bg-primary-100 dark:bg-primary-900 text-primary-700 dark:text-primary-300'
+                    : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
                 }`}
               >
                 <MessageSquare className="h-4 w-4 mr-2" />
@@ -40,8 +42,8 @@ export default function Layout({ children }: LayoutProps) {
                   to="/admin"
                   className={`flex items-center px-3 py-2 rounded-md text-sm font-medium ${
                     location.pathname === '/admin'
-                      ? 'bg-primary-100 text-primary-700'
-                      : 'text-gray-500 hover:text-gray-700'
+                      ? 'bg-primary-100 dark:bg-primary-900 text-primary-700 dark:text-primary-300'
+                      : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
                   }`}
                 >
                   <Settings className="h-4 w-4 mr-2" />
@@ -50,8 +52,16 @@ export default function Layout({ children }: LayoutProps) {
               )}
               
               <button
+                onClick={toggleTheme}
+                className="p-2 rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+                title={`Switch to ${theme === 'light' ? 'dark' : 'light'} mode`}
+              >
+                {theme === 'light' ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />}
+              </button>
+              
+              <button
                 onClick={logout}
-                className="flex items-center px-3 py-2 rounded-md text-sm font-medium text-gray-500 hover:text-gray-700"
+                className="flex items-center px-3 py-2 rounded-md text-sm font-medium text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
               >
                 <LogOut className="h-4 w-4 mr-2" />
                 Logout
@@ -62,7 +72,7 @@ export default function Layout({ children }: LayoutProps) {
       </header>
 
       {/* Main content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 dark:text-white">
         {children}
       </main>
     </div>

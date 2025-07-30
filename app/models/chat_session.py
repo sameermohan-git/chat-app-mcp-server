@@ -16,4 +16,4 @@ class ChatSession(Base):
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
 
     # Relationships
-    chat = relationship("Chat") 
+    chat = relationship("Chat", back_populates="chat_sessions") 

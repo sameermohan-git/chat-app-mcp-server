@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import api from '../lib/api'
 import { Chat, Message } from '../types'
@@ -62,7 +62,7 @@ export function useSendMessage() {
       const response = await api.post(`/chat/${chatId}/messages`, { content })
       return response.data
     },
-    onSuccess: (data, { chatId }) => {
+    onSuccess: (_, { chatId }) => {
       queryClient.invalidateQueries({ queryKey: ['chat-messages', chatId] })
       queryClient.invalidateQueries({ queryKey: ['chat', chatId] })
     },

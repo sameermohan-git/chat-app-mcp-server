@@ -5,6 +5,9 @@ from app.core.config import settings
 from app.core.database import engine, Base
 from app.api import auth_router, chat_router, admin_router, websocket_router
 
+# Import all models to ensure they are registered with SQLAlchemy
+from app.models import User, Chat, Message, LLMModel, MCPServer, ChatSession
+
 # Create database tables
 Base.metadata.create_all(bind=engine)
 

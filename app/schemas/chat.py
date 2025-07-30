@@ -5,7 +5,7 @@ from datetime import datetime
 
 class ChatBase(BaseModel):
     title: str
-    llm_model_id: int
+    llm_model_id: Optional[int] = None
     mcp_server_id: Optional[int] = None
 
 

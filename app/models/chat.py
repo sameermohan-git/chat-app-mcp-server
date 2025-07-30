@@ -10,7 +10,7 @@ class Chat(Base):
     id = Column(Integer, primary_key=True, index=True)
     title = Column(String, nullable=False)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
-    llm_model_id = Column(Integer, ForeignKey("llm_models.id"), nullable=False)
+    llm_model_id = Column(Integer, ForeignKey("llm_models.id"), nullable=True)
     mcp_server_id = Column(Integer, ForeignKey("mcp_servers.id"), nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
@@ -20,6 +20,7 @@ class Chat(Base):
     messages = relationship("Message", back_populates="chat", cascade="all, delete-orphan")
     llm_model = relationship("LLMModel")
     mcp_server = relationship("MCPServer")
+    chat_sessions = relationship("ChatSession", back_populates="chat")
 
 
 class Message(Base):
