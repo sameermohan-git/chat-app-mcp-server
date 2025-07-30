@@ -26,7 +26,7 @@ export interface Message {
   chat_id: number
   role: string
   content: string
-  metadata?: Record<string, any>
+  message_metadata?: Record<string, any>
   created_at: string
 }
 

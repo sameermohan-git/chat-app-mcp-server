@@ -29,7 +29,7 @@ class Message(Base):
     chat_id = Column(Integer, ForeignKey("chats.id"), nullable=False)
     role = Column(String, nullable=False)  # user, assistant, system
     content = Column(Text, nullable=False)
-    metadata = Column(JSON, nullable=True)  # For storing additional info like tokens, latency, etc.
+    message_metadata = Column(JSON, nullable=True)  # For storing additional info like tokens, latency, etc.
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
     # Relationships

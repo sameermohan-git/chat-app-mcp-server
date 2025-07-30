@@ -6,6 +6,7 @@ from app.core.database import get_db
 from app.services.auth_service import AuthService
 from app.schemas.auth import Token
 from app.schemas.user import UserCreate, UserResponse
+from app.api.deps import get_current_active_user
 
 router = APIRouter(prefix="/auth", tags=["authentication"])
 
@@ -49,6 +50,6 @@ def login(
 
 
 @router.get("/me", response_model=UserResponse)
-def get_current_user_info(current_user = Depends(AuthService.get_current_active_user)):
+def get_current_user_info(current_user = Depends(get_current_active_user)):
     """Get current user information"""
     return current_user 

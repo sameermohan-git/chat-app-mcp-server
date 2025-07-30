@@ -22,7 +22,7 @@ class ChatUpdate(BaseModel):
 class MessageBase(BaseModel):
     role: str
     content: str
-    metadata: Optional[Dict[str, Any]] = None
+    message_metadata: Optional[Dict[str, Any]] = None
 
 
 class MessageCreate(MessageBase):
