@@ -41,6 +41,8 @@ export default function Admin() {
     description: '',
     configuration: {}
   })
+  const [availableModels, setAvailableModels] = useState<any>(null)
+  const [showAvailableModels, setShowAvailableModels] = useState(false)
   const [newServer, setNewServer] = useState({
     name: '',
     description: '',
@@ -188,6 +190,58 @@ export default function Admin() {
     setShowEditServerModal(true)
   }
 
+  const fetchAvailableOpenAIModels = async () => {
+    try {
+      setLoading(true)
+      const response = await api.get('/admin/available-openai-models')
+      console.log('Available OpenAI Models:', response.data)
+      
+      // Store the models data
+      setAvailableModels(response.data.models)
+      
+      // Show summary in toast
+      const { models, total_count } = response.data
+      const chatCount = models.chat_models.length
+      const imageCount = models.image_models.length
+      const audioCount = models.audio_models.length
+      const embeddingCount = models.embedding_models.length
+      
+      toast.success(
+        `Found ${total_count} models: ${chatCount} chat, ${imageCount} image, ${audioCount} audio, ${embeddingCount} embedding`,
+        { duration: 5000 }
+      )
+      
+    } catch (error: any) {
+      toast.error(error.response?.data?.detail || 'Failed to fetch available models')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const selectModelFromAvailable = (modelId: string) => {
+    setNewModel({
+      ...newModel,
+      name: modelId,
+      provider: 'openai',
+      model_name: modelId,
+      description: `OpenAI ${modelId} model`
+    })
+    setShowAvailableModels(false)
+  }
+
+  const selectModelFromAvailableForEdit = (modelId: string) => {
+    if (editingModel) {
+      setEditingModel({
+        ...editingModel,
+        name: modelId,
+        provider: 'openai',
+        model_name: modelId,
+        description: `OpenAI ${modelId} model`
+      })
+    }
+    setShowAvailableModels(false)
+  }
+
   return (
     <div className="space-y-6 dark:bg-gray-900 dark:text-white min-h-screen p-6">
       <div className="flex justify-between items-center">
@@ -233,8 +287,18 @@ export default function Admin() {
       {/* Content */}
       {activeTab === 'models' && (
         <div className="space-y-4">
-          <div className="flex justify-between items-center">
-            <h2 className="text-lg font-medium text-gray-900 dark:text-white">LLM Models</h2>
+                  <div className="flex justify-between items-center">
+          <h2 className="text-lg font-medium text-gray-900 dark:text-white">LLM Models</h2>
+          <div className="flex space-x-2">
+            <button 
+              onClick={fetchAvailableOpenAIModels}
+              disabled={loading}
+              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md font-medium flex items-center disabled:opacity-50"
+              title="Fetch available OpenAI models"
+            >
+              <TestTube className="h-4 w-4 mr-2" />
+              {loading ? 'Fetching...' : 'Fetch OpenAI Models'}
+            </button>
             <button 
               onClick={() => setShowAddModelModal(true)}
               className="btn btn-primary bg-primary-600 hover:bg-primary-700 text-white px-4 py-2 rounded-md font-medium flex items-center"
@@ -243,6 +307,7 @@ export default function Admin() {
               Add Model
             </button>
           </div>
+        </div>
 
           <div className="grid gap-4">
             {models.map((model) => (
@@ -364,13 +429,28 @@ export default function Admin() {
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Name</label>
-                <input
-                  type="text"
-                  value={newModel.name}
-                  onChange={(e) => setNewModel({...newModel, name: e.target.value})}
-                  className="mt-1 block w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-primary-500 focus:border-primary-500"
-                  placeholder="e.g., GPT-4"
-                />
+                <div className="flex space-x-2">
+                  <input
+                    type="text"
+                    value={newModel.name}
+                    onChange={(e) => setNewModel({...newModel, name: e.target.value})}
+                    className="mt-1 flex-1 border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-primary-500 focus:border-primary-500"
+                    placeholder="e.g., GPT-4"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (!availableModels) {
+                        fetchAvailableOpenAIModels()
+                      }
+                      setShowAvailableModels(!showAvailableModels)
+                    }}
+                    className="mt-1 px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md text-sm font-medium"
+                    title="Select from available OpenAI models"
+                  >
+                    {showAvailableModels ? 'Hide' : 'Select'}
+                  </button>
+                </div>
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Provider</label>
@@ -402,6 +482,94 @@ export default function Admin() {
                   rows={3}
                 />
               </div>
+              
+              {/* Available Models Dropdown */}
+              {showAvailableModels && availableModels && (
+                <div className="border border-gray-300 dark:border-gray-600 rounded-md p-3 bg-gray-50 dark:bg-gray-800">
+                  <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Available OpenAI Models</h4>
+                  
+                  {/* Chat Models */}
+                  {availableModels.chat_models.length > 0 && (
+                    <div className="mb-3">
+                      <h5 className="text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Chat Models</h5>
+                      <div className="grid grid-cols-2 gap-1">
+                        {availableModels.chat_models.slice(0, 10).map((model: any) => (
+                          <button
+                            key={model.id}
+                            onClick={() => selectModelFromAvailable(model.id)}
+                            className="text-left text-xs p-1 hover:bg-blue-100 dark:hover:bg-blue-900 rounded truncate"
+                            title={model.id}
+                          >
+                            {model.id}
+                          </button>
+                        ))}
+                      </div>
+                      {availableModels.chat_models.length > 10 && (
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                          +{availableModels.chat_models.length - 10} more chat models
+                        </p>
+                      )}
+                    </div>
+                  )}
+                  
+                  {/* Image Models */}
+                  {availableModels.image_models.length > 0 && (
+                    <div className="mb-3">
+                      <h5 className="text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Image Models</h5>
+                      <div className="grid grid-cols-2 gap-1">
+                        {availableModels.image_models.map((model: any) => (
+                          <button
+                            key={model.id}
+                            onClick={() => selectModelFromAvailable(model.id)}
+                            className="text-left text-xs p-1 hover:bg-blue-100 dark:hover:bg-blue-900 rounded truncate"
+                            title={model.id}
+                          >
+                            {model.id}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  
+                  {/* Audio Models */}
+                  {availableModels.audio_models.length > 0 && (
+                    <div className="mb-3">
+                      <h5 className="text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Audio Models</h5>
+                      <div className="grid grid-cols-2 gap-1">
+                        {availableModels.audio_models.map((model: any) => (
+                          <button
+                            key={model.id}
+                            onClick={() => selectModelFromAvailable(model.id)}
+                            className="text-left text-xs p-1 hover:bg-blue-100 dark:hover:bg-blue-900 rounded truncate"
+                            title={model.id}
+                          >
+                            {model.id}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  
+                  {/* Embedding Models */}
+                  {availableModels.embedding_models.length > 0 && (
+                    <div>
+                      <h5 className="text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Embedding Models</h5>
+                      <div className="grid grid-cols-2 gap-1">
+                        {availableModels.embedding_models.map((model: any) => (
+                          <button
+                            key={model.id}
+                            onClick={() => selectModelFromAvailable(model.id)}
+                            className="text-left text-xs p-1 hover:bg-blue-100 dark:hover:bg-blue-900 rounded truncate"
+                            title={model.id}
+                          >
+                            {model.id}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
             <div className="flex justify-end space-x-3 mt-6">
               <button
@@ -508,13 +676,28 @@ export default function Admin() {
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Name</label>
-                <input
-                  type="text"
-                  value={editingModel.name}
-                  onChange={(e) => setEditingModel({...editingModel, name: e.target.value})}
-                  className="mt-1 block w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-primary-500 focus:border-primary-500"
-                  placeholder="e.g., GPT-4"
-                />
+                <div className="flex space-x-2">
+                  <input
+                    type="text"
+                    value={editingModel.name}
+                    onChange={(e) => setEditingModel({...editingModel, name: e.target.value})}
+                    className="mt-1 flex-1 border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-primary-500 focus:border-primary-500"
+                    placeholder="e.g., GPT-4"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (!availableModels) {
+                        fetchAvailableOpenAIModels()
+                      }
+                      setShowAvailableModels(!showAvailableModels)
+                    }}
+                    className="mt-1 px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md text-sm font-medium"
+                    title="Select from available OpenAI models"
+                  >
+                    {showAvailableModels ? 'Hide' : 'Select'}
+                  </button>
+                </div>
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Provider</label>
@@ -557,6 +740,94 @@ export default function Admin() {
                   <span className="ml-2 text-sm text-gray-700 dark:text-gray-300">Active</span>
                 </label>
               </div>
+              
+              {/* Available Models Dropdown for Edit */}
+              {showAvailableModels && availableModels && (
+                <div className="border border-gray-300 dark:border-gray-600 rounded-md p-3 bg-gray-50 dark:bg-gray-800">
+                  <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Available OpenAI Models</h4>
+                  
+                  {/* Chat Models */}
+                  {availableModels.chat_models.length > 0 && (
+                    <div className="mb-3">
+                      <h5 className="text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Chat Models</h5>
+                      <div className="grid grid-cols-2 gap-1">
+                        {availableModels.chat_models.slice(0, 10).map((model: any) => (
+                          <button
+                            key={model.id}
+                            onClick={() => selectModelFromAvailableForEdit(model.id)}
+                            className="text-left text-xs p-1 hover:bg-blue-100 dark:hover:bg-blue-900 rounded truncate"
+                            title={model.id}
+                          >
+                            {model.id}
+                          </button>
+                        ))}
+                      </div>
+                      {availableModels.chat_models.length > 10 && (
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                          +{availableModels.chat_models.length - 10} more chat models
+                        </p>
+                      )}
+                    </div>
+                  )}
+                  
+                  {/* Image Models */}
+                  {availableModels.image_models.length > 0 && (
+                    <div className="mb-3">
+                      <h5 className="text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Image Models</h5>
+                      <div className="grid grid-cols-2 gap-1">
+                        {availableModels.image_models.map((model: any) => (
+                          <button
+                            key={model.id}
+                            onClick={() => selectModelFromAvailableForEdit(model.id)}
+                            className="text-left text-xs p-1 hover:bg-blue-100 dark:hover:bg-blue-900 rounded truncate"
+                            title={model.id}
+                          >
+                            {model.id}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  
+                  {/* Audio Models */}
+                  {availableModels.audio_models.length > 0 && (
+                    <div className="mb-3">
+                      <h5 className="text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Audio Models</h5>
+                      <div className="grid grid-cols-2 gap-1">
+                        {availableModels.audio_models.map((model: any) => (
+                          <button
+                            key={model.id}
+                            onClick={() => selectModelFromAvailableForEdit(model.id)}
+                            className="text-left text-xs p-1 hover:bg-blue-100 dark:hover:bg-blue-900 rounded truncate"
+                            title={model.id}
+                          >
+                            {model.id}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  
+                  {/* Embedding Models */}
+                  {availableModels.embedding_models.length > 0 && (
+                    <div>
+                      <h5 className="text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Embedding Models</h5>
+                      <div className="grid grid-cols-2 gap-1">
+                        {availableModels.embedding_models.map((model: any) => (
+                          <button
+                            key={model.id}
+                            onClick={() => selectModelFromAvailableForEdit(model.id)}
+                            className="text-left text-xs p-1 hover:bg-blue-100 dark:hover:bg-blue-900 rounded truncate"
+                            title={model.id}
+                          >
+                            {model.id}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
             <div className="flex justify-end space-x-3 mt-6">
               <button

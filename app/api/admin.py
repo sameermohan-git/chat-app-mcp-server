@@ -1,4 +1,5 @@
 from typing import List
+import httpx
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from app.core.database import get_db
@@ -10,6 +11,7 @@ from app.schemas.llm_model import LLMModelCreate, LLMModelUpdate, LLMModelRespon
 from app.schemas.mcp_server import MCPServerCreate, MCPServerUpdate, MCPServerResponse
 from app.models.llm_model import LLMModel
 from app.models.mcp_server import MCPServer
+from app.core.config import settings
 
 router = APIRouter(prefix="/admin", tags=["admin"])
 
@@ -96,6 +98,86 @@ def delete_llm_model(
     db.delete(db_model)
     db.commit()
     return {"message": "LLM model deleted successfully"}
+
+
+@router.get("/available-openai-models")
+async def get_available_openai_models(
+    current_user: User = Depends(get_current_admin_user)
+):
+    """Get list of available OpenAI models"""
+    try:
+        async with httpx.AsyncClient() as client:
+            response = await client.get(
+                "https://api.openai.com/v1/models",
+                headers={
+                    "Authorization": f"Bearer {settings.OPENAI_API_KEY}",
+                    "Content-Type": "application/json"
+                }
+            )
+            response.raise_for_status()
+            data = response.json()
+            
+            # Filter and categorize models
+            models = data.get("data", [])
+            categorized_models = {
+                "chat_models": [],
+                "image_models": [],
+                "audio_models": [],
+                "embedding_models": [],
+                "other_models": []
+            }
+            
+            for model in models:
+                model_id = model.get("id", "")
+                
+                # Categorize models
+                if any(prefix in model_id for prefix in ["gpt-4", "gpt-3.5", "o1", "o3", "o4"]):
+                    categorized_models["chat_models"].append({
+                        "id": model_id,
+                        "created": model.get("created"),
+                        "owned_by": model.get("owned_by")
+                    })
+                elif "dall-e" in model_id or "gpt-image" in model_id:
+                    categorized_models["image_models"].append({
+                        "id": model_id,
+                        "created": model.get("created"),
+                        "owned_by": model.get("owned_by")
+                    })
+                elif any(prefix in model_id for prefix in ["tts-", "whisper-"]):
+                    categorized_models["audio_models"].append({
+                        "id": model_id,
+                        "created": model.get("created"),
+                        "owned_by": model.get("owned_by")
+                    })
+                elif "embedding" in model_id:
+                    categorized_models["embedding_models"].append({
+                        "id": model_id,
+                        "created": model.get("created"),
+                        "owned_by": model.get("owned_by")
+                    })
+                else:
+                    categorized_models["other_models"].append({
+                        "id": model_id,
+                        "created": model.get("created"),
+                        "owned_by": model.get("owned_by")
+                    })
+            
+            return {
+                "success": True,
+                "models": categorized_models,
+                "total_count": len(models)
+            }
+            
+    except httpx.HTTPStatusError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"OpenAI API error: {e.response.text}"
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error fetching models: {str(e)}"
+        )
 
 
 # MCP Server Management
