@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { Send, Plus } from 'lucide-react'
+import { Send, Plus, X } from 'lucide-react'
 import api from '../lib/api'
 import toast from 'react-hot-toast'
 
@@ -14,6 +14,24 @@ interface Chat {
   id: number
   title: string
   created_at: string
+  llm_model_id?: number
+  mcp_server_id?: number
+}
+
+interface LLMModel {
+  id: number
+  name: string
+  provider: string
+  model_name: string
+  is_active: boolean
+}
+
+interface MCPServer {
+  id: number
+  name: string
+  server_url: string
+  server_type: string
+  is_active: boolean
 }
 
 export default function Chat() {
@@ -22,10 +40,20 @@ export default function Chat() {
   const [messages, setMessages] = useState<Message[]>([])
   const [newMessage, setNewMessage] = useState('')
   const [loading, setLoading] = useState(false)
+  const [models, setModels] = useState<LLMModel[]>([])
+  const [servers, setServers] = useState<MCPServer[]>([])
+  const [showNewChatModal, setShowNewChatModal] = useState(false)
+  const [newChatData, setNewChatData] = useState({
+    title: 'New Chat',
+    llm_model_id: undefined as number | undefined,
+    mcp_server_id: undefined as number | undefined
+  })
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     fetchChats()
+    fetchModels()
+    fetchServers()
   }, [])
 
   useEffect(() => {
@@ -50,6 +78,24 @@ export default function Chat() {
     }
   }
 
+  const fetchModels = async () => {
+    try {
+      const response = await api.get('/admin/llm-models')
+      setModels(response.data.filter((model: LLMModel) => model.is_active))
+    } catch (error) {
+      console.error('Failed to fetch models:', error)
+    }
+  }
+
+  const fetchServers = async () => {
+    try {
+      const response = await api.get('/admin/mcp-servers')
+      setServers(response.data.filter((server: MCPServer) => server.is_active))
+    } catch (error) {
+      console.error('Failed to fetch servers:', error)
+    }
+  }
+
   const fetchMessages = async (chatId: number) => {
     try {
       const response = await api.get(`/chat/${chatId}/messages`)
@@ -61,12 +107,15 @@ export default function Chat() {
 
   const createNewChat = async () => {
     try {
-      const response = await api.post('/chat/', {
-        title: 'New Chat',
-        llm_model_id: 1, // Default model
-      })
+      const response = await api.post('/chat/', newChatData)
       setChats([response.data, ...chats])
       setSelectedChat(response.data)
+      setShowNewChatModal(false)
+      setNewChatData({
+        title: 'New Chat',
+        llm_model_id: undefined,
+        mcp_server_id: undefined
+      })
     } catch (error) {
       toast.error('Failed to create new chat')
     }
@@ -119,7 +168,7 @@ export default function Chat() {
       <div className="w-80 bg-white border-r border-gray-200 flex flex-col">
         <div className="p-4 border-b border-gray-200">
           <button
-            onClick={createNewChat}
+            onClick={() => setShowNewChatModal(true)}
             className="w-full flex items-center justify-center px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700"
           >
             <Plus className="h-4 w-4 mr-2" />
@@ -200,6 +249,77 @@ export default function Chat() {
           </div>
         )}
       </div>
+
+      {/* New Chat Modal */}
+      {showNewChatModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-medium">Create New Chat</h3>
+              <button onClick={() => setShowNewChatModal(false)} className="text-gray-400 hover:text-gray-600">
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Chat Title</label>
+                <input
+                  type="text"
+                  value={newChatData.title}
+                  onChange={(e) => setNewChatData({...newChatData, title: e.target.value})}
+                  className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-primary-500 focus:border-primary-500"
+                  placeholder="Enter chat title"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700">LLM Model (Optional)</label>
+                <select
+                  value={newChatData.llm_model_id || ''}
+                  onChange={(e) => setNewChatData({...newChatData, llm_model_id: e.target.value ? Number(e.target.value) : undefined})}
+                  className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-primary-500 focus:border-primary-500"
+                >
+                  <option value="">No model selected</option>
+                  {models.map((model) => (
+                    <option key={model.id} value={model.id}>
+                      {model.name} ({model.provider})
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700">MCP Server (Optional)</label>
+                <select
+                  value={newChatData.mcp_server_id || ''}
+                  onChange={(e) => setNewChatData({...newChatData, mcp_server_id: e.target.value ? Number(e.target.value) : undefined})}
+                  className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-primary-500 focus:border-primary-500"
+                >
+                  <option value="">No server selected</option>
+                  {servers.map((server) => (
+                    <option key={server.id} value={server.id}>
+                      {server.name} ({server.server_type})
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+            <div className="flex justify-end space-x-3 mt-6">
+              <button
+                onClick={() => setShowNewChatModal(false)}
+                className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={createNewChat}
+                disabled={!newChatData.title.trim()}
+                className="px-4 py-2 bg-primary-600 text-white rounded-md text-sm font-medium hover:bg-primary-700 disabled:opacity-50"
+              >
+                Create Chat
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 } 

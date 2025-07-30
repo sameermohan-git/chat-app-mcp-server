@@ -30,6 +30,10 @@ export default function Admin() {
   const [loading, setLoading] = useState(false)
   const [showAddModelModal, setShowAddModelModal] = useState(false)
   const [showAddServerModal, setShowAddServerModal] = useState(false)
+  const [showEditModelModal, setShowEditModelModal] = useState(false)
+  const [showEditServerModal, setShowEditServerModal] = useState(false)
+  const [editingModel, setEditingModel] = useState<LLMModel | null>(null)
+  const [editingServer, setEditingServer] = useState<MCPServer | null>(null)
   const [newModel, setNewModel] = useState({
     name: '',
     provider: '',
@@ -114,6 +118,76 @@ export default function Admin() {
     }
   }
 
+  const editModel = async () => {
+    if (!editingModel) return
+    try {
+      setLoading(true)
+      await api.put(`/admin/llm-models/${editingModel.id}`, editingModel)
+      toast.success('LLM model updated successfully!')
+      setShowEditModelModal(false)
+      setEditingModel(null)
+      fetchModels()
+    } catch (error: any) {
+      toast.error(error.response?.data?.detail || 'Failed to update LLM model')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const editServer = async () => {
+    if (!editingServer) return
+    try {
+      setLoading(true)
+      await api.put(`/admin/mcp-servers/${editingServer.id}`, editingServer)
+      toast.success('MCP server updated successfully!')
+      setShowEditServerModal(false)
+      setEditingServer(null)
+      fetchServers()
+    } catch (error: any) {
+      toast.error(error.response?.data?.detail || 'Failed to update MCP server')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const deleteModel = async (modelId: number) => {
+    if (!confirm('Are you sure you want to delete this LLM model?')) return
+    try {
+      setLoading(true)
+      await api.delete(`/admin/llm-models/${modelId}`)
+      toast.success('LLM model deleted successfully!')
+      fetchModels()
+    } catch (error: any) {
+      toast.error(error.response?.data?.detail || 'Failed to delete LLM model')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const deleteServer = async (serverId: number) => {
+    if (!confirm('Are you sure you want to delete this MCP server?')) return
+    try {
+      setLoading(true)
+      await api.delete(`/admin/mcp-servers/${serverId}`)
+      toast.success('MCP server deleted successfully!')
+      fetchServers()
+    } catch (error: any) {
+      toast.error(error.response?.data?.detail || 'Failed to delete MCP server')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const openEditModel = (model: LLMModel) => {
+    setEditingModel({ ...model })
+    setShowEditModelModal(true)
+  }
+
+  const openEditServer = (server: MCPServer) => {
+    setEditingServer({ ...server })
+    setShowEditServerModal(true)
+  }
+
   return (
     <div className="space-y-6 dark:bg-gray-900 dark:text-white min-h-screen p-6">
       <div className="flex justify-between items-center">
@@ -182,10 +256,18 @@ export default function Admin() {
                     )}
                   </div>
                   <div className="flex space-x-2">
-                    <button className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
+                    <button 
+                      onClick={() => openEditModel(model)}
+                      className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                      title="Edit model"
+                    >
                       <Edit className="h-4 w-4" />
                     </button>
-                    <button className="p-2 text-gray-400 hover:text-red-600 dark:hover:text-red-400">
+                    <button 
+                      onClick={() => deleteModel(model.id)}
+                      className="p-2 text-gray-400 hover:text-red-600 dark:hover:text-red-400"
+                      title="Delete model"
+                    >
                       <Trash2 className="h-4 w-4" />
                     </button>
                   </div>
@@ -234,13 +316,22 @@ export default function Admin() {
                       onClick={() => testServer(server.id)}
                       disabled={loading}
                       className="p-2 text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 disabled:opacity-50"
+                      title="Test server connection"
                     >
                       <TestTube className="h-4 w-4" />
                     </button>
-                    <button className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
+                    <button 
+                      onClick={() => openEditServer(server)}
+                      className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                      title="Edit server"
+                    >
                       <Edit className="h-4 w-4" />
                     </button>
-                    <button className="p-2 text-gray-400 hover:text-red-600 dark:hover:text-red-400">
+                    <button 
+                      onClick={() => deleteServer(server.id)}
+                      className="p-2 text-gray-400 hover:text-red-600 dark:hover:text-red-400"
+                      title="Delete server"
+                    >
                       <Trash2 className="h-4 w-4" />
                     </button>
                   </div>
@@ -398,6 +489,172 @@ export default function Admin() {
                 className="px-4 py-2 bg-primary-600 text-white rounded-md text-sm font-medium hover:bg-primary-700 disabled:opacity-50"
               >
                 {loading ? 'Adding...' : 'Add Server'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Model Modal */}
+      {showEditModelModal && editingModel && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white dark:bg-gray-800 rounded-lg p-6 w-full max-w-md">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-medium text-gray-900 dark:text-white">Edit LLM Model</h3>
+              <button onClick={() => setShowEditModelModal(false)} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Name</label>
+                <input
+                  type="text"
+                  value={editingModel.name}
+                  onChange={(e) => setEditingModel({...editingModel, name: e.target.value})}
+                  className="mt-1 block w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-primary-500 focus:border-primary-500"
+                  placeholder="e.g., GPT-4"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Provider</label>
+                <input
+                  type="text"
+                  value={editingModel.provider}
+                  onChange={(e) => setEditingModel({...editingModel, provider: e.target.value})}
+                  className="mt-1 block w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-primary-500 focus:border-primary-500"
+                  placeholder="e.g., openai"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Model Name</label>
+                <input
+                  type="text"
+                  value={editingModel.model_name}
+                  onChange={(e) => setEditingModel({...editingModel, model_name: e.target.value})}
+                  className="mt-1 block w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-primary-500 focus:border-primary-500"
+                  placeholder="e.g., gpt-4"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Description</label>
+                <textarea
+                  value={editingModel.description}
+                  onChange={(e) => setEditingModel({...editingModel, description: e.target.value})}
+                  className="mt-1 block w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-primary-500 focus:border-primary-500"
+                  placeholder="Optional description"
+                  rows={3}
+                />
+              </div>
+              <div>
+                <label className="flex items-center">
+                  <input
+                    type="checkbox"
+                    checked={editingModel.is_active}
+                    onChange={(e) => setEditingModel({...editingModel, is_active: e.target.checked})}
+                    className="rounded border-gray-300 text-primary-600 focus:ring-primary-500"
+                  />
+                  <span className="ml-2 text-sm text-gray-700 dark:text-gray-300">Active</span>
+                </label>
+              </div>
+            </div>
+            <div className="flex justify-end space-x-3 mt-6">
+              <button
+                onClick={() => setShowEditModelModal(false)}
+                className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={editModel}
+                disabled={loading || !editingModel.name || !editingModel.provider || !editingModel.model_name}
+                className="px-4 py-2 bg-primary-600 text-white rounded-md text-sm font-medium hover:bg-primary-700 disabled:opacity-50"
+              >
+                {loading ? 'Updating...' : 'Update Model'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Server Modal */}
+      {showEditServerModal && editingServer && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white dark:bg-gray-800 rounded-lg p-6 w-full max-w-md">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-medium text-gray-900 dark:text-white">Edit MCP Server</h3>
+              <button onClick={() => setShowEditServerModal(false)} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Name</label>
+                <input
+                  type="text"
+                  value={editingServer.name}
+                  onChange={(e) => setEditingServer({...editingServer, name: e.target.value})}
+                  className="mt-1 block w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-primary-500 focus:border-primary-500"
+                  placeholder="e.g., File System Server"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Server URL</label>
+                <input
+                  type="text"
+                  value={editingServer.server_url}
+                  onChange={(e) => setEditingServer({...editingServer, server_url: e.target.value})}
+                  className="mt-1 block w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-primary-500 focus:border-primary-500"
+                  placeholder="e.g., http://localhost:3001"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Server Type</label>
+                <select
+                  value={editingServer.server_type}
+                  onChange={(e) => setEditingServer({...editingServer, server_type: e.target.value})}
+                  className="mt-1 block w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-primary-500 focus:border-primary-500"
+                >
+                  <option value="http">HTTP</option>
+                  <option value="websocket">WebSocket</option>
+                  <option value="tcp">TCP</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Description</label>
+                <textarea
+                  value={editingServer.description}
+                  onChange={(e) => setEditingServer({...editingServer, description: e.target.value})}
+                  className="mt-1 block w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-primary-500 focus:border-primary-500"
+                  placeholder="Optional description"
+                  rows={3}
+                />
+              </div>
+              <div>
+                <label className="flex items-center">
+                  <input
+                    type="checkbox"
+                    checked={editingServer.is_active}
+                    onChange={(e) => setEditingServer({...editingServer, is_active: e.target.checked})}
+                    className="rounded border-gray-300 text-primary-600 focus:ring-primary-500"
+                  />
+                  <span className="ml-2 text-sm text-gray-700 dark:text-gray-300">Active</span>
+                </label>
+              </div>
+            </div>
+            <div className="flex justify-end space-x-3 mt-6">
+              <button
+                onClick={() => setShowEditServerModal(false)}
+                className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={editServer}
+                disabled={loading || !editingServer.name || !editingServer.server_url}
+                className="px-4 py-2 bg-primary-600 text-white rounded-md text-sm font-medium hover:bg-primary-700 disabled:opacity-50"
+              >
+                {loading ? 'Updating...' : 'Update Server'}
               </button>
             </div>
           </div>
