@@ -40,7 +40,7 @@ class LangfuseService:
                 metadata=metadata or {}
             )
 
-            generation.flush()
+            # generation.flush()  # Removed flush call
         except Exception as e:
             print(f"Langfuse tracing error: {e}")
 
@@ -88,7 +88,7 @@ class LangfuseService:
                 }
             )
 
-            trace.flush()
+            # trace.flush()  # Removed flush call
         except Exception as e:
             print(f"Langfuse tracing error: {e}")
 
@@ -126,7 +126,7 @@ class LangfuseService:
                 }
             )
 
-            trace.flush()
+            # trace.flush()  # Removed flush call
         except Exception as e:
             print(f"Langfuse tracing error: {e}")
 
@@ -160,7 +160,7 @@ class LangfuseService:
                 }
             )
 
-            trace.flush()
+            # trace.flush()  # Removed flush call
         except Exception as e:
             print(f"Langfuse tracing error: {e}")
 

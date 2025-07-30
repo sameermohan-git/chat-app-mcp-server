@@ -165,8 +165,8 @@ export default function Chat() {
   return (
     <div className="flex h-[calc(100vh-8rem)]">
       {/* Sidebar */}
-      <div className="w-80 bg-white border-r border-gray-200 flex flex-col">
-        <div className="p-4 border-b border-gray-200">
+      <div className="w-80 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 flex flex-col">
+        <div className="p-4 border-b border-gray-200 dark:border-gray-700">
           <button
             onClick={() => setShowNewChatModal(true)}
             className="w-full flex items-center justify-center px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700"
@@ -181,12 +181,12 @@ export default function Chat() {
             <button
               key={chat.id}
               onClick={() => setSelectedChat(chat)}
-              className={`w-full text-left p-4 hover:bg-gray-50 ${
-                selectedChat?.id === chat.id ? 'bg-primary-50 border-r-2 border-primary-600' : ''
+              className={`w-full text-left p-4 hover:bg-gray-50 dark:hover:bg-gray-700 ${
+                selectedChat?.id === chat.id ? 'bg-primary-50 dark:bg-primary-900 border-r-2 border-primary-600 dark:border-primary-400' : ''
               }`}
             >
-              <div className="font-medium text-gray-900 truncate">{chat.title}</div>
-              <div className="text-sm text-gray-500">
+              <div className="font-medium text-gray-900 dark:text-white truncate">{chat.title}</div>
+              <div className="text-sm text-gray-500 dark:text-gray-400">
                 {new Date(chat.created_at).toLocaleDateString()}
               </div>
             </button>
@@ -195,7 +195,7 @@ export default function Chat() {
       </div>
 
       {/* Chat area */}
-      <div className="flex-1 flex flex-col bg-white">
+      <div className="flex-1 flex flex-col bg-white dark:bg-gray-900">
         {selectedChat ? (
           <>
             {/* Messages */}
@@ -211,7 +211,7 @@ export default function Chat() {
                     className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
                       message.role === 'user'
                         ? 'bg-primary-600 text-white'
-                        : 'bg-gray-100 text-gray-900'
+                        : 'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white'
                     }`}
                   >
                     {message.content}
@@ -222,7 +222,7 @@ export default function Chat() {
             </div>
 
             {/* Input */}
-            <div className="p-4 border-t border-gray-200">
+            <div className="p-4 border-t border-gray-200 dark:border-gray-700">
               <div className="flex space-x-2">
                 <input
                   type="text"
@@ -230,7 +230,7 @@ export default function Chat() {
                   onChange={(e) => setNewMessage(e.target.value)}
                   onKeyPress={(e) => e.key === 'Enter' && sendMessage()}
                   placeholder="Type your message..."
-                  className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+                  className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
                   disabled={loading}
                 />
                 <button
@@ -244,7 +244,7 @@ export default function Chat() {
             </div>
           </>
         ) : (
-          <div className="flex-1 flex items-center justify-center text-gray-500">
+          <div className="flex-1 flex items-center justify-center text-gray-500 dark:text-gray-400">
             Select a chat to start messaging
           </div>
         )}
@@ -253,30 +253,30 @@ export default function Chat() {
       {/* New Chat Modal */}
       {showNewChatModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-medium">Create New Chat</h3>
-              <button onClick={() => setShowNewChatModal(false)} className="text-gray-400 hover:text-gray-600">
+                  <div className="bg-white dark:bg-gray-800 rounded-lg p-6 w-full max-w-md">
+          <div className="flex justify-between items-center mb-4">
+            <h3 className="text-lg font-medium text-gray-900 dark:text-white">Create New Chat</h3>
+            <button onClick={() => setShowNewChatModal(false)} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
                 <X className="h-5 w-5" />
               </button>
             </div>
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700">Chat Title</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Chat Title</label>
                 <input
                   type="text"
                   value={newChatData.title}
                   onChange={(e) => setNewChatData({...newChatData, title: e.target.value})}
-                  className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-primary-500 focus:border-primary-500"
+                  className="mt-1 block w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 focus:outline-none focus:ring-primary-500 focus:border-primary-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                   placeholder="Enter chat title"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700">LLM Model (Optional)</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">LLM Model (Optional)</label>
                 <select
                   value={newChatData.llm_model_id || ''}
                   onChange={(e) => setNewChatData({...newChatData, llm_model_id: e.target.value ? Number(e.target.value) : undefined})}
-                  className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-primary-500 focus:border-primary-500"
+                  className="mt-1 block w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 focus:outline-none focus:ring-primary-500 focus:border-primary-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                 >
                   <option value="">No model selected</option>
                   {models.map((model) => (
@@ -287,11 +287,11 @@ export default function Chat() {
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700">MCP Server (Optional)</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">MCP Server (Optional)</label>
                 <select
                   value={newChatData.mcp_server_id || ''}
                   onChange={(e) => setNewChatData({...newChatData, mcp_server_id: e.target.value ? Number(e.target.value) : undefined})}
-                  className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-primary-500 focus:border-primary-500"
+                  className="mt-1 block w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 focus:outline-none focus:ring-primary-500 focus:border-primary-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                 >
                   <option value="">No server selected</option>
                   {servers.map((server) => (
@@ -305,7 +305,7 @@ export default function Chat() {
             <div className="flex justify-end space-x-3 mt-6">
               <button
                 onClick={() => setShowNewChatModal(false)}
-                className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50"
+                className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
               >
                 Cancel
               </button>

@@ -25,8 +25,9 @@ class MessageBase(BaseModel):
     message_metadata: Optional[Dict[str, Any]] = None
 
 
-class MessageCreate(MessageBase):
-    pass
+class MessageCreate(BaseModel):
+    content: str
+    message_metadata: Optional[Dict[str, Any]] = None
 
 
 class MessageResponse(MessageBase):

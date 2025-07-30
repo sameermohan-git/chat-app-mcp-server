@@ -90,11 +90,20 @@ class ChatService:
             })
 
             # Get LLM response
-            llm_response = await self.llm_service.get_completion(
-                chat.llm_model_id,
-                messages,
-                db
-            )
+            if not chat.llm_model_id:
+                # If no LLM model is assigned, return a default response
+                llm_response = {
+                    "content": "I'm sorry, but no AI model is configured for this chat. Please ask an admin to assign an LLM model to this chat.",
+                    "model": "none",
+                    "provider": "none",
+                    "usage": {}
+                }
+            else:
+                llm_response = await self.llm_service.get_completion(
+                    chat.llm_model_id,
+                    messages,
+                    db
+                )
 
             # If MCP server is configured, try to enhance response
             if chat.mcp_server_id:
@@ -138,7 +147,7 @@ class ChatService:
                 chat_id=chat_id,
                 role="assistant",
                 content=llm_response["content"],
-                metadata={
+                message_metadata={
                     "model": llm_response.get("model"),
                     "provider": llm_response.get("provider"),
                     "usage": llm_response.get("usage", {}),

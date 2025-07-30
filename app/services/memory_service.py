@@ -93,7 +93,7 @@ class MemoryService:
                 "role": msg.role,
                 "content": msg.content,
                 "created_at": msg.created_at.isoformat(),
-                "metadata": msg.metadata
+                "metadata": msg.message_metadata
             }
             for msg in messages
         ]
